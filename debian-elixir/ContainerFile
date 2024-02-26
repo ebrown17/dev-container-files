@@ -1,0 +1,38 @@
+FROM debian:latest
+
+RUN apt-get update && apt-get upgrade -y && \
+	apt-get install -y openssh-server iproute2 git sudo vim locales locales-all \
+	curl build-essential autoconf m4 libncurses5-dev libncurses-dev \
+	libwxgtk3.2-dev libwxgtk-webview3.2-dev libgl1-mesa-dev libglu1-mesa-dev \
+	libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils openjdk-17-jdk
+
+RUN systemctl enable ssh && service ssh start
+
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+ENV USER=ebrown
+
+RUN useradd -m -s /bin/bash -G sudo "${USER}" -p $(openssl passwd -6 "${USER}123")
+USER "${USER}"
+WORKDIR "/home/${USER}"
+
+RUN echo "export LC_ALL=en_US.UTF-8" >> /home/${USER}/.bashrc && \
+	echo "export LANG=en_US.UTF-8" >> /home/${USER}/.bashrc && \
+	echo "export LANGUAGE=en_US.UTF-8" >> /home/${USER}/.bashrc && \
+	git clone https://github.com/asdf-vm/asdf.git /home/${USER}/.asdf --branch v0.14.0 && \
+	echo ". /home/${USER}/.asdf/asdf.sh" >> /home/${USER}/.bashrc && \
+	echo ". /home/${USER}/.asdf/completions/asdf.bash" >> /home/${USER}/.bashrc
+
+SHELL ["/bin/bash", "-c"]
+
+RUN	. /home/${USER}/.asdf/asdf.sh && . /home/${USER}/.asdf/completions/asdf.bash && \
+	asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git && \
+	asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git && \
+	asdf install erlang latest && asdf global erlang latest && \
+	asdf install elixir latest && asdf global elixir latest && \
+	mkdir -p /home/${USER}/workspace
+
+EXPOSE 22
+
+CMD ["bash"]
