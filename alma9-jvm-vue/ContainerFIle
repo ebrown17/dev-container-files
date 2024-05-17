@@ -1,0 +1,19 @@
+FROM  almalinux/9-init
+
+RUN dnf update -y && dnf install -y java-21-openjdk-devel.x86_64 less \
+    coreutils iproute git curl nodejs openssh-server sudo openssh-clients glibc-langpack-en \
+    --setopt=install_weak_deps=False --allowerasing && dnf clean all && \
+    rm -rf /var/cache/yum && systemctl enable sshd
+
+RUN sed -i 's/#Port.*$/Port 2022/' /etc/ssh/sshd_config && chmod 775 /var/run && rm -f /var/run/nologin
+RUN mkdir /etc/systemd/system/sshd.service.d/ && echo -e '[Service]\nRestart=always' > /etc/systemd/system/sshd.service.d/sshd.conf
+
+ENV USER=ebrown
+
+RUN useradd -m -s /bin/bash -G wheel "${USER}" -p $(openssl passwd -6 "${USER}123")
+
+RUN mkdir -p /home/"${USER}"/projects && chown "${USER}":"${USER}" -R /home/"${USER}"
+
+EXPOSE 8081 5173 2022
+
+CMD ["/sbin/init"]
