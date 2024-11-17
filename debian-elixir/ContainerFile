@@ -14,11 +14,11 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-ENV USER=dev
+ENV USER=ebrown
 
 RUN useradd -m -s /bin/bash "${USER}" && usermod -aG sudo ${USER} && echo "${USER}:${USER}" | chpasswd
 
-RUN /bin/bash -c 'echo "export LC_ALL=en_US.UTF-8" >> /home/${USER}/.bashrc && \
+RUN sudo -H -u ${USER} bash -c 'echo "export LC_ALL=en_US.UTF-8" >> /home/${USER}/.bashrc && \
 	echo "export LANG=en_US.UTF-8" >> /home/${USER}/.bashrc && \
 	echo "export LANGUAGE=en_US.UTF-8" >> /home/${USER}/.bashrc && \
 	git clone https://github.com/asdf-vm/asdf.git /home/${USER}/.asdf --branch v0.14.1 && \
