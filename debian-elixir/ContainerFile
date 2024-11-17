@@ -2,37 +2,35 @@ FROM debian:latest
 
 RUN apt-get update && apt-get upgrade -y && \
 	apt-get install -y openssh-server iproute2 git sudo vim locales locales-all \
-	curl build-essential autoconf m4 libncurses5-dev libncurses-dev \
+	curl build-essential autoconf m4 libncurses5-dev libncurses-dev ffmpeg init pkg-config \
 	libwxgtk3.2-dev libwxgtk-webview3.2-dev libgl1-mesa-dev libglu1-mesa-dev \
-	libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils openjdk-17-jdk
+	libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils openjdk-17-jdk && \ 
+	 systemctl enable ssh && apt-get clean
 
-RUN systemctl enable ssh && service ssh start
+RUN sed -i 's/#Port.*$/Port 2022/' /etc/ssh/sshd_config && mkdir /etc/systemd/system/sshd.service.d/ && \ 
+	echo -e '[Service]\nRestart=always' > /etc/systemd/system/sshd.service.d/sshd.conf
 
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
-ENV USER=ebrown
 
-RUN useradd -m -s /bin/bash -G sudo "${USER}" -p $(openssl passwd -6 "${USER}123")
-USER "${USER}"
-WORKDIR "/home/${USER}"
+ENV USER=dev
 
-RUN echo "export LC_ALL=en_US.UTF-8" >> /home/${USER}/.bashrc && \
+RUN useradd -m -s /bin/bash "${USER}" && usermod -aG sudo ${USER} && echo "${USER}:${USER}" | chpasswd
+
+RUN /bin/bash -c 'echo "export LC_ALL=en_US.UTF-8" >> /home/${USER}/.bashrc && \
 	echo "export LANG=en_US.UTF-8" >> /home/${USER}/.bashrc && \
 	echo "export LANGUAGE=en_US.UTF-8" >> /home/${USER}/.bashrc && \
-	git clone https://github.com/asdf-vm/asdf.git /home/${USER}/.asdf --branch v0.14.0 && \
+	git clone https://github.com/asdf-vm/asdf.git /home/${USER}/.asdf --branch v0.14.1 && \
 	echo ". /home/${USER}/.asdf/asdf.sh" >> /home/${USER}/.bashrc && \
-	echo ". /home/${USER}/.asdf/completions/asdf.bash" >> /home/${USER}/.bashrc
-
-SHELL ["/bin/bash", "-c"]
-
-RUN	. /home/${USER}/.asdf/asdf.sh && . /home/${USER}/.asdf/completions/asdf.bash && \
+	echo ". /home/${USER}/.asdf/completions/asdf.bash" >> /home/${USER}/.bashrc && \
+	. /home/${USER}/.asdf/asdf.sh && . /home/${USER}/.asdf/completions/asdf.bash && \
 	asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git && \
 	asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git && \
 	asdf install erlang latest && asdf global erlang latest && \
 	asdf install elixir latest && asdf global elixir latest && \
-	mkdir -p /home/${USER}/workspace
+	mkdir -p /home/${USER}/workspace && chown -R ${USER}:${USER} /home/${USER}'
 
-EXPOSE 22
+EXPOSE 8081 5173 2022 1234 5432 8829 8080 5001 8830 8554
 
-CMD ["bash"]
+CMD ["/sbin/init"]
