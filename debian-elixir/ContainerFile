@@ -5,7 +5,7 @@ RUN apt-get update && apt-get upgrade -y && \
 	curl build-essential autoconf m4 libncurses5-dev libncurses-dev ffmpeg init pkg-config \
 	libwxgtk3.2-dev libwxgtk-webview3.2-dev libgl1-mesa-dev libglu1-mesa-dev \
 	libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils openjdk-17-jdk && \ 
-	 systemctl enable ssh && apt-get clean
+	systemctl enable ssh && apt-get clean
 
 RUN sed -i 's/#Port.*$/Port 2022/' /etc/ssh/sshd_config && mkdir /etc/systemd/system/sshd.service.d/ && \ 
 	echo -e '[Service]\nRestart=always' > /etc/systemd/system/sshd.service.d/sshd.conf
@@ -21,14 +21,8 @@ RUN useradd -m -s /bin/bash "${USER}" && usermod -aG sudo ${USER} && echo "${USE
 RUN sudo -H -u ${USER} bash -c 'echo "export LC_ALL=en_US.UTF-8" >> /home/${USER}/.bashrc && \
 	echo "export LANG=en_US.UTF-8" >> /home/${USER}/.bashrc && \
 	echo "export LANGUAGE=en_US.UTF-8" >> /home/${USER}/.bashrc && \
-	git clone https://github.com/asdf-vm/asdf.git /home/${USER}/.asdf --branch v0.14.1 && \
-	echo ". /home/${USER}/.asdf/asdf.sh" >> /home/${USER}/.bashrc && \
-	echo ". /home/${USER}/.asdf/completions/asdf.bash" >> /home/${USER}/.bashrc && \
-	. /home/${USER}/.asdf/asdf.sh && . /home/${USER}/.asdf/completions/asdf.bash && \
-	asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git && \
-	asdf plugin-add elixir https://github.com/asdf-vm/asdf-elixir.git && \
-	asdf install erlang latest && asdf global erlang latest && \
-	asdf install elixir latest && asdf global elixir latest && \
+	curl https://mise.run | sh && echo "eval $(/home/${USER}/.local/bin/mise activate bash)" >> ~/.bashrc && \
+	/home/${USER}/.local/bin/mise use --global erlang@latest && /home/${USER}/.local/bin/mise use --global elixir@latest && \		
 	mkdir -p /home/${USER}/workspace && chown -R ${USER}:${USER} /home/${USER}'
 
 EXPOSE 8081 5173 2022 1234 5432 8829 8080 5001 8830 8554
